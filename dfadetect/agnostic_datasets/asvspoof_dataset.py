@@ -111,6 +111,36 @@ class ASVSpoofDataset(SimpleAudioFakeDataset):
 if __name__ == "__main__":
     ASVSPOOF_DATASET_PATH = ""
 
+     # unused if your class has absolute paths
+    for fold in [0, 1, 2]:
+        print("\n" + "="*80)
+        print(f"FOLD {fold}")
+        print("="*80)
+
+        for subset in ["train", "val", "test"]:
+            ds = ASVSpoofDataset(ASVSPOOF_DATASET_PATH,
+                                 fold_num=fold,
+                                 fold_subset=subset)
+
+            df = ds.samples  # DataFrame with at least 'label' and 'attack_type'
+
+            # real / fake per subset
+            n_total = len(df)
+            n_real  = (df["label"] == 0).sum()
+            n_fake  = (df["label"] == 1).sum()
+
+            print(f"\nSubset: {subset}")
+            print(f"  Total samples : {n_total}")
+            print(f"  Real  (label=0): {n_real}")
+            print(f"  Fake  (label=1): {n_fake}")
+
+            # optional: breakdown by attack type in this subset
+            spoof_only = df[df["label"] == 1]
+            print("  Fake per attack type:")
+            print(spoof_only["attack_type"].value_counts())
+
+
+
     dataset = ASVSpoofDataset(ASVSPOOF_DATASET_PATH, fold_num=1, fold_subset='test')
     print(dataset.samples["attack_type"].unique())
     print(dataset.samples)
