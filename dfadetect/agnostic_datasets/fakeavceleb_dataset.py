@@ -71,7 +71,7 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
             for index, sample in fake_samples.iterrows():
                 samples["user_id"].append(sample["source"])
-                samples["sample_name"].append(Path(sample["filename"]).stem)
+                samples["sample_name"].append(Path(sample["path"]).stem)
                 samples["attack_type"].append(sample["method"])
                 samples["label"].append("spoof")
                 samples["path"].append(self.get_file_path(sample))
@@ -95,7 +95,7 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
         for index, sample in samples_list.iterrows():
             samples["user_id"].append(sample["source"])
-            samples["sample_name"].append(Path(sample["filename"]).stem)
+            samples["sample_name"].append(Path(sample["path"]).stem)
             samples["attack_type"].append("-")
             samples["label"].append("bonafide")
             samples["path"].append(self.get_file_path(sample))
