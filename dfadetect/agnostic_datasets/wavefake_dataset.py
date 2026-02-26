@@ -33,8 +33,8 @@ WAVEFAKE_KFOLD_SPLIT = {
 class WaveFakeDataset(SimpleAudioFakeDataset):
 
     fake_data_path = "generated_audio"
-    jsut_real_data_path = "real_audio/jsut_ver1.1/basic5000/wav"
-    ljspeech_real_data_path = "real_audio/LJSpeech-1.1/wavs"
+    jsut_real_data_path = "jsut_ver1.1/basic5000/wav"
+    ljspeech_real_data_path = "the-LJSpeech-1.1/wavs"
 
     def __init__(self, path, fold_num=0, fold_subset="train", transform=None):
         super().__init__(fold_num, fold_subset, transform)
@@ -101,20 +101,22 @@ class WaveFakeDataset(SimpleAudioFakeDataset):
 
 if __name__ == "__main__":
     WAVEFAKE_DATASET_PATH = ""
+    print(" Dataset of WaveFake ")
+    for fold in [0, 1, 2]:
+        print("\n" + "="*80)
+        print(f"FOLD {fold}")
+        print("="*80)
 
-    real = 0
-    fake = 0
-    for subset in ['train', 'test', 'val']:
-        dataset = WaveFakeDataset(WAVEFAKE_DATASET_PATH, fold_num=2, fold_subset=subset)
-        dataset.get_real_samples()
-        real += len(dataset)
+        for subset in ["train", "val", "test"]:
+            ds = WaveFakeDataset(WAVEFAKE_DATASET_PATH, fold_num=fold, fold_subset=subset)
+            df = ds.samples
 
-        print('real', len(dataset))
+            n_total = len(df)
+            n_real  = (df["label"] == "bonafide").sum()
+            n_fake  = (df["label"] == "spoof").sum()
 
-        dataset = WaveFakeDataset(WAVEFAKE_DATASET_PATH, fold_num=2, fold_subset=subset)
-        dataset.get_fake_samples()
-        fake += len(dataset)
+            print(f"\nSubset: {subset}")
+            print(f"  Total files : {n_total}")
+            print(f"  Real  files : {n_real}")
+            print(f"  Fake  files : {n_fake}")
 
-        print('fake', len(dataset))
-
-    print(real, fake)

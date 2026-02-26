@@ -32,9 +32,9 @@ FAKEAVCELEB_KFOLD_SPLIT = {
 
 class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
-    audio_folder = "FakeAVCeleb-audio"
+    audio_folder = "/kaggle/input/datasets/mrquadian/fakeavceleb"
     audio_extension = ".mp3"
-    metadata_file = Path(audio_folder) / "meta_data.csv"
+    metadata_file = Path(audio_folder) / "meta_data_selected_methods.csv"
     subsets = ("train", "dev", "eval")
 
     def __init__(self, path, fold_num=0, fold_subset="train", transform=None):
@@ -102,13 +102,66 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
         return pd.DataFrame(samples)
 
-    def get_file_path(self, sample):
-        path = "/".join([self.audio_folder, *sample["path"].split("/")[1:]])
-        return Path(self.path) / path / Path(sample["filename"]).with_suffix(self.audio_extension)
 
+    def get_file_path(self, sample):
+            """
+            sample['audio_path'] example:
+              'FakeAVCeleb/FakeVideo-FakeAudio/African/men/id00076/00109_10_id00476_wavtolip.flac'
+            We want:
+              '/kaggle/input/datasets/mrquadian/fakeavceleb/FakeVideo-FakeAudio/African/men/id00076/...flac'
+            """
+            rel = sample["audio_path"]
+    
+            # If audio_path starts with 'FakeAVCeleb/', drop that part
+            parts = rel.split("/")
+            if parts[0] == "FakeAVCeleb":
+                rel = "/".join(parts[1:])
+    
+            # Join with base folder
+            return Path(self.audio_folder) / rel
 
 if __name__ == "__main__":
     FAKEAVCELEB_DATASET_PATH = ""
+
+    
+    total_real = 0
+    total_fake = 0
+
+    print(" FakeAVCeleb ")
+
+    for fold in [0, 1, 2]:
+        print("\n" + "="*80)
+        print(f"FOLD {fold}")
+        print("="*80)
+
+        for subset in ["train", "val", "test"]:
+            print(f"\n--- Subset: {subset} ---")
+
+            ds = FakeAVCelebDataset(
+                FAKEAVCELEB_DATASET_PATH,
+                fold_num=fold,
+                fold_subset=subset
+            )
+
+            # separate DataFrames
+            real_df = ds.get_real_samples()
+            fake_df = ds.get_fake_samples()
+
+            n_real = len(real_df)
+            n_fake = len(fake_df)
+
+            total_real += n_real
+            total_fake += n_fake
+
+            print(f"Real samples : {n_real}")
+            print(f"Fake samples : {n_fake}")
+            print(f"Total        : {n_real + n_fake}")
+
+    print("\nOverall totals across all folds/subsets:")
+    print("Total real samples:", total_real)
+    print("Total fake samples:", total_fake)
+
+
 
     real = 0
     fake = 0
