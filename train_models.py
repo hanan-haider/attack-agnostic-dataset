@@ -71,7 +71,7 @@ def train_nn(
     )
     timestamp = time.time()
     folds_number = 3
-
+    print("Check for the data")
     for fold in range(folds_number):
         data_train = AttackAgnosticDataset(
             asvspoof_path=datasets_paths[0],

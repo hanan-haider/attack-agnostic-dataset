@@ -45,11 +45,14 @@ class ASVSpoofDataset(SimpleAudioFakeDataset):
         self.seed = ASVSPOOF_KFOLD_SPLIT[fold_num]["seed"]
 
         self.samples = pd.DataFrame()
-
+        print("checking for the path")
         for subset in self.subsets:
             subset_dir = Path(self.path) / f"{self.subset_dir_prefix}{subset}"
+            print("subset_dir",subset_dir)
             subset_protocol_path = self.get_protocol_path(subset)
+            print("subset_protocol_path",subset_protocol_path)
             subset_samples = self.read_protocol(subset_dir, subset_protocol_path)
+            print('subset_samples',subset_samples)
 
             self.samples = pd.concat([self.samples, subset_samples])
 

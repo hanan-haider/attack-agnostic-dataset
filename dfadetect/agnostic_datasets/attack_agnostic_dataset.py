@@ -26,6 +26,7 @@ class AttackAgnosticDataset(SimpleAudioFakeDataset):
         datasets = []
 
         if asvspoof_path is not None:
+            print("asvspoof data set")
             asvspoof_dataset = ASVSpoofDataset(asvspoof_path, fold_num=fold_num, fold_subset=fold_subset)
             datasets.append(asvspoof_dataset)
 
