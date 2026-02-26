@@ -60,11 +60,13 @@ class SimpleAudioFakeDataset(Dataset):
             path = str(sample["path"])
             label = sample["label"]
             attack_type = sample["attack_type"]
+            
         else:
             print("loading runnning 2")
             path, label, attack_type = self.samples[index]
 
         if WAVE_FAKE_INTERFACE:
+            print("wavefake interface")
             # TODO: apply normalization from torchaudio.load
             waveform, sample_rate = torchaudio.load(path, normalize=WAVE_FAKE_NORMALIZE)
 
