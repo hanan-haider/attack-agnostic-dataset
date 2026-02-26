@@ -52,10 +52,15 @@ class ASVSpoofDataset(SimpleAudioFakeDataset):
             subset_protocol_path = self.get_protocol_path(subset)
             print("subset_protocol_path",subset_protocol_path)
             subset_samples = self.read_protocol(subset_dir, subset_protocol_path)
-            print('subset_samples',subset_samples)
+            #print('subset_samples',subset_samples)
 
             self.samples = pd.concat([self.samples, subset_samples])
 
+            print(self.samples)              # print full DataFrame
+            print(self.samples.head())       # print first 5 rows
+            print(self.samples.shape)        # print (rows, columns)
+            print(self.samples.tail())       # print last 5 rows
+            
         # self.samples, self.attack_signatures = self.group_by_attack()
         self.transform = transform
 

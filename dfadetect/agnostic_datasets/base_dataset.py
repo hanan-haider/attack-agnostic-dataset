@@ -55,11 +55,13 @@ class SimpleAudioFakeDataset(Dataset):
 
         if isinstance(self.samples, pd.DataFrame):
             sample = self.samples.iloc[index]
+            print("loading runnning 1")
 
             path = str(sample["path"])
             label = sample["label"]
             attack_type = sample["attack_type"]
         else:
+            print("loading runnning 2")
             path, label, attack_type = self.samples[index]
 
         if WAVE_FAKE_INTERFACE:
