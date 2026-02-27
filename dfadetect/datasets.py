@@ -108,10 +108,21 @@ class AudioDataset(torch.utils.data.Dataset):
 
     @staticmethod
     def resample(path, target_sample_rate, normalize=True):
-        waveform, sample_rate = torchaudio.sox_effects.apply_effects_file(
-            path, [["rate", f"{target_sample_rate}"]], normalize=normalize
+        # Load
+        waveform, sample_rate = torchaudio.load(path, normalize=normalize)
+    
+        # If already correct sr, do nothing
+        if sample_rate == target_sample_rate:
+            return waveform, sample_rate
+    
+        # Resample
+        resampler = torchaudio.transforms.Resample(
+            orig_freq=sample_rate,
+            new_freq=target_sample_rate,
         )
-        return waveform, sample_rate
+        waveform = resampler(waveform)
+        return waveform, target_sample_rate
+    
 
     @staticmethod
     def process_phone_call(waveform, sample_rate):
