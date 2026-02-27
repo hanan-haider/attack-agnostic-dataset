@@ -1,12 +1,15 @@
 import pandas as pd
 
+
 from dfadetect.agnostic_datasets.asvspoof_dataset import ASVSpoofDataset
 from dfadetect.agnostic_datasets.base_dataset import SimpleAudioFakeDataset
 from dfadetect.agnostic_datasets.fakeavceleb_dataset import FakeAVCelebDataset
 from dfadetect.agnostic_datasets.wavefake_dataset import WaveFakeDataset
 
 
+
 class AttackAgnosticDataset(SimpleAudioFakeDataset):
+
     def __init__(
         self,
         asvspoof_path=None,
@@ -22,175 +25,156 @@ class AttackAgnosticDataset(SimpleAudioFakeDataset):
     ):
         super().__init__(fold_num, fold_subset, transform, return_label)
 
-        print(
-            f"[AttackAgnosticDataset.__init__] fold_num={fold_num}, "
-            f"fold_subset={fold_subset}, oversample={oversample}, undersample={undersample}"
-        )
-
         datasets = []
-        
-        if asvspoof_path is not None:
-            print("=============================ASVSpooof========================================")
-            print("[AttackAgnosticDataset.__init__] loading ASVSpoofDataset from:", asvspoof_path)
-            asvspoof_dataset = ASVSpoofDataset(
-                asvspoof_path, fold_num=fold_num, fold_subset=fold_subset
-            )
-            print(
-                "[AttackAgnosticDataset.__init__] ASVSpoofDataset size:",
-                len(asvspoof_dataset.samples),
-            )
-            datasets.append(asvspoof_dataset)
 
-        if wavefake_path is not None:
-            print("=============================WaveFake========================================")
-            print("[AttackAgnosticDataset.__init__] loading WaveFakeDataset from:", wavefake_path)
-            wavefake_dataset = WaveFakeDataset(
-                wavefake_path, fold_num=fold_num, fold_subset=fold_subset
-            )
-            print(
-                "[AttackAgnosticDataset.__init__] WaveFakeDataset size:",
-                len(wavefake_dataset.samples),
-            )
-            datasets.append(wavefake_dataset)
+        # Only load dataset if path is provided and valid
+        if asvspoof_path is not None and asvspoof_path != "" and str(asvspoof_path).lower() != "none":
+            try:
+                asvspoof_dataset = ASVSpoofDataset(asvspoof_path, fold_num=fold_num, fold_subset=fold_subset)
+                datasets.append(asvspoof_dataset)
+                print(f"✓ Loaded ASVspoof dataset")
+            except Exception as e:
+                print(f"⚠ Skipping ASVspoof: {e}")
 
-        if fakeavceleb_path is not None:
-            print("=============================fakeAVCeleb========================================")
-            print(
-                "[AttackAgnosticDataset.__init__] loading FakeAVCelebDataset from:",
-                fakeavceleb_path,
-            )
-            fakeavceleb_dataset = FakeAVCelebDataset(
-                fakeavceleb_path, fold_num=fold_num, fold_subset=fold_subset
-            )
-            print(
-                "[AttackAgnosticDataset.__init__] FakeAVCelebDataset size:",
-                len(fakeavceleb_dataset.samples),
-            )
-            datasets.append(fakeavceleb_dataset)
+        if wavefake_path is not None and wavefake_path != "" and str(wavefake_path).lower() != "none":
+            try:
+                wavefake_dataset = WaveFakeDataset(wavefake_path, fold_num=fold_num, fold_subset=fold_subset)
+                datasets.append(wavefake_dataset)
+                print(f"✓ Loaded WaveFake dataset")
+            except Exception as e:
+                print(f"⚠ Skipping WaveFake: {e}")
 
-        self.samples = pd.concat([ds.samples for ds in datasets], ignore_index=True)
-        print(
-            "[AttackAgnosticDataset.__init__] concatenated samples shape:",
-            self.samples.shape,
+        if fakeavceleb_path is not None and fakeavceleb_path != "" and str(fakeavceleb_path).lower() != "none":
+            try:
+                fakeavceleb_dataset = FakeAVCelebDataset(fakeavceleb_path, fold_num=fold_num, fold_subset=fold_subset)
+                datasets.append(fakeavceleb_dataset)
+                print(f"✓ Loaded FakeAVCeleb dataset")
+            except Exception as e:
+                print(f"⚠ Skipping FakeAVCeleb: {e}")
+
+        # Check if at least one dataset was loaded
+        if len(datasets) == 0:
+            raise ValueError("❌ No datasets loaded! Provide at least one valid dataset path.")
+
+        self.samples = pd.concat(
+            [ds.samples for ds in datasets],
+            ignore_index=True
         )
-        if len(self.samples) > 0:
-            print(
-                "[AttackAgnosticDataset.__init__] head(2):\n",
-                self.samples.head(2),
-            )
-            print(
-                "[AttackAgnosticDataset.__init__] label counts:\n",
-                self.samples["label"].value_counts(),
-            )
 
         if oversample:
-            print("[AttackAgnosticDataset.__init__] applying oversample_dataset()")
             self.oversample_dataset()
         elif undersample:
-            print("[AttackAgnosticDataset.__init__] applying undersample_dataset()")
             self.undersample_dataset()
 
         if reduced_number is not None:
-            print(
-                "[AttackAgnosticDataset.__init__] reducing dataset to",
-                reduced_number,
-                "samples (with replacement)",
-            )
-            self.samples = self.samples.sample(
-                reduced_number, replace=True, random_state=42
-            )
-            print(
-                "[AttackAgnosticDataset.__init__] reduced samples shape:",
-                self.samples.shape,
-            )
+            self.samples = self.samples.sample(reduced_number, replace=True, random_state=42)
 
     def oversample_dataset(self):
-        samples = self.samples.groupby(by=["label"])
-        bona_length = len(samples.groups["bonafide"])
-        spoof_length = len(samples.groups["spoof"])
-
-        print(
-            "[oversample_dataset] bona_length=",
-            bona_length,
-            "spoof_length=",
-            spoof_length,
-        )
+        # Check what labels we actually have
+        unique_labels = self.samples['label'].unique()
+        print(f"Unique labels in dataset: {unique_labels}")
+        
+        samples = self.samples.groupby(by=['label'])
+        
+        # Handle both string and tuple groupby keys
+        group_keys = list(samples.groups.keys())
+        
+        # Find bonafide and spoof samples
+        bonafide_key = None
+        spoof_key = None
+        
+        for key in group_keys:
+            # Handle tuple keys from groupby
+            label = key[0] if isinstance(key, tuple) else key
+            if label == "bonafide":
+                bonafide_key = key
+            elif label == "spoof":
+                spoof_key = key
+        
+        if bonafide_key is None or spoof_key is None:
+            print(f"Warning: Could not find bonafide/spoof labels. Available keys: {group_keys}")
+            print("Skipping oversampling.")
+            return
+        
+        bona_length = len(samples.groups[bonafide_key])
+        spoof_length = len(samples.groups[spoof_key])
+        
+        print(f"Bonafide samples: {bona_length}, Spoof samples: {spoof_length}")
 
         diff_length = spoof_length - bona_length
-        print("[oversample_dataset] diff_length=", diff_length)
 
         if diff_length < 0:
-            raise NotImplementedError("Oversampling where bonafide > spoof not implemented")
+            raise NotImplementedError("Bonafide oversampling not implemented")
 
         if diff_length > 0:
-            bonafide = samples.get_group("bonafide").sample(
-                diff_length, replace=True, random_state=42
-            )
-            print(
-                "[oversample_dataset] sampling",
-                diff_length,
-                "extra bonafide samples",
-            )
+            bonafide = samples.get_group(bonafide_key).sample(diff_length, replace=True)
             self.samples = pd.concat([self.samples, bonafide], ignore_index=True)
-            print(
-                "[oversample_dataset] new samples shape:",
-                self.samples.shape,
-            )
-            print(
-                "[oversample_dataset] new label counts:\n",
-                self.samples["label"].value_counts(),
-            )
+            print(f"Oversampled bonafide by {diff_length} samples. Total samples now: {len(self.samples)}")
 
     def undersample_dataset(self):
-        samples = self.samples.groupby(by=["label"])
-        bona_length = len(samples.groups["bonafide"])
-        spoof_length = len(samples.groups["spoof"])
-
-        print(
-            "[undersample_dataset] bona_length=",
-            bona_length,
-            "spoof_length=",
-            spoof_length,
-        )
+        samples = self.samples.groupby(by=['label'])
+        
+        # Handle both string and tuple groupby keys
+        group_keys = list(samples.groups.keys())
+        
+        bonafide_key = None
+        spoof_key = None
+        
+        for key in group_keys:
+            label = key[0] if isinstance(key, tuple) else key
+            if label == "bonafide":
+                bonafide_key = key
+            elif label == "spoof":
+                spoof_key = key
+        
+        if bonafide_key is None or spoof_key is None:
+            print(f"Warning: Could not find bonafide/spoof labels. Skipping undersampling.")
+            return
+        
+        bona_length = len(samples.groups[bonafide_key])
+        spoof_length = len(samples.groups[spoof_key])
 
         if spoof_length < bona_length:
-            raise NotImplementedError("Undersampling where spoof < bonafide not implemented")
+            raise NotImplementedError("Bonafide undersampling not implemented")
 
         if spoof_length > bona_length:
-            spoofs = samples.get_group("spoof").sample(
-                bona_length, replace=True, random_state=42
-            )
-            print(
-                "[undersample_dataset] sampling",
-                bona_length,
-                "spoof samples to match bonafide",
-            )
-            self.samples = pd.concat(
-                [samples.get_group("bonafide"), spoofs], ignore_index=True
-            )
-            print(
-                "[undersample_dataset] new samples shape:",
-                self.samples.shape,
-            )
-            print(
-                "[undersample_dataset] new label counts:\n",
-                self.samples["label"].value_counts(),
-            )
+            spoofs = samples.get_group(spoof_key).sample(bona_length, replace=True)
+            self.samples = pd.concat([samples.get_group(bonafide_key), spoofs], ignore_index=True)
 
     def get_bonafide_only(self):
-        samples = self.samples.groupby(by=["label"])
-        self.samples = samples.get_group("bonafide")
-        print(
-            "[get_bonafide_only] bonafide samples shape:",
-            self.samples.shape,
-        )
+        samples = self.samples.groupby(by=['label'])
+        
+        # Handle both string and tuple groupby keys
+        group_keys = list(samples.groups.keys())
+        bonafide_key = None
+        
+        for key in group_keys:
+            label = key[0] if isinstance(key, tuple) else key
+            if label == "bonafide":
+                bonafide_key = key
+                break
+        
+        if bonafide_key is None:
+            raise ValueError(f"No bonafide samples found. Available labels: {group_keys}")
+        
+        self.samples = samples.get_group(bonafide_key)
         return self.samples
 
     def get_spoof_only(self):
-        samples = self.samples.groupby(by=["label"])
-        self.samples = samples.get_group("spoof")
-        print(
-            "[get_spoof_only] spoof samples shape:",
-            self.samples.shape,
-        )
+        samples = self.samples.groupby(by=['label'])
+        
+        # Handle both string and tuple groupby keys
+        group_keys = list(samples.groups.keys())
+        spoof_key = None
+        
+        for key in group_keys:
+            label = key[0] if isinstance(key, tuple) else key
+            if label == "spoof":
+                spoof_key = key
+                break
+        
+        if spoof_key is None:
+            raise ValueError(f"No spoof samples found. Available labels: {group_keys}")
+        
+        self.samples = samples.get_group(spoof_key)
         return self.samples
