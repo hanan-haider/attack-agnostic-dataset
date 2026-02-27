@@ -128,39 +128,21 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
 
 if __name__ == "__main__":
-    FAKEAVCELEB_DATASET_PATH = ""
-
-    total_real = 0
-    total_fake = 0
-
-    for fold in [0, 1, 2]:
-        for subset in ["train", "val", "test"]:
-            ds = FakeAVCelebDataset(
-                FAKEAVCELEB_DATASET_PATH,
-                fold_num=fold,
-                fold_subset=subset,
-            )
-
-            real_df = ds.get_real_samples()
-            fake_df = ds.get_fake_samples()
-
-            n_real = len(real_df)
-            n_fake = len(fake_df)
-
-            total_real += n_real
-            total_fake += n_fake
+     FAKEAVCELEB_DATASET_PATH = ""
 
     real = 0
     fake = 0
-    for subset in ["train", "test", "val"]:
-        dataset = FakeAVCelebDataset(
-            FAKEAVCELEB_DATASET_PATH, fold_num=2, fold_subset=subset
-        )
+    for subset in ['train', 'test', 'val']:
+        dataset = FakeAVCelebDataset(FAKEAVCELEB_DATASET_PATH, fold_num=2, fold_subset=subset)
         dataset.get_real_samples()
         real += len(dataset)
 
-        dataset = FakeAVCelebDataset(
-            FAKEAVCELEB_DATASET_PATH, fold_num=2, fold_subset=subset
-        )
+        print('real', len(dataset))
+
+        dataset = FakeAVCelebDataset(FAKEAVCELEB_DATASET_PATH, fold_num=2, fold_subset=subset)
         dataset.get_fake_samples()
         fake += len(dataset)
+
+        print('fake', len(dataset))
+
+    print(real, fake)
