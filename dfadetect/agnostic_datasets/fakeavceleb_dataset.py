@@ -32,7 +32,7 @@ FAKEAVCELEB_KFOLD_SPLIT = {
 
 class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
-    audio_folder = "/kaggle/input/datasets/mrquadian/fakeavceleb"
+    audio_folder = ""
     audio_extension = ".mp3"
     metadata_file = Path(audio_folder) / "meta_data_selected_methods.csv"
     subsets = ("train", "dev", "eval")
@@ -63,7 +63,7 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
             "label": [],
             "path": []
         }
-        
+
         for attack_name in self.allowed_attacks:
             fake_samples = self.metadata[
                 (self.metadata["method"] == attack_name) & (self.metadata["audio_type"] == "FakeAudio")
