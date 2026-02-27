@@ -63,7 +63,7 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
             "label": [],
             "path": []
         }
-
+        
         for attack_name in self.allowed_attacks:
             fake_samples = self.metadata[
                 (self.metadata["method"] == attack_name) & (self.metadata["audio_type"] == "FakeAudio")
