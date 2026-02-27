@@ -128,7 +128,7 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
 
 if __name__ == "__main__":
-     FAKEAVCELEB_DATASET_PATH = ""
+    FAKEAVCELEB_DATASET_PATH = ""
 
     real = 0
     fake = 0
