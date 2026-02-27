@@ -28,8 +28,9 @@ class AttackAgnosticDataset(SimpleAudioFakeDataset):
         )
 
         datasets = []
-
+        
         if asvspoof_path is not None:
+            print("=============================ASVSpooof========================================")
             print("[AttackAgnosticDataset.__init__] loading ASVSpoofDataset from:", asvspoof_path)
             asvspoof_dataset = ASVSpoofDataset(
                 asvspoof_path, fold_num=fold_num, fold_subset=fold_subset
@@ -41,6 +42,7 @@ class AttackAgnosticDataset(SimpleAudioFakeDataset):
             datasets.append(asvspoof_dataset)
 
         if wavefake_path is not None:
+            print("=============================WaveFake========================================")
             print("[AttackAgnosticDataset.__init__] loading WaveFakeDataset from:", wavefake_path)
             wavefake_dataset = WaveFakeDataset(
                 wavefake_path, fold_num=fold_num, fold_subset=fold_subset
@@ -52,6 +54,7 @@ class AttackAgnosticDataset(SimpleAudioFakeDataset):
             datasets.append(wavefake_dataset)
 
         if fakeavceleb_path is not None:
+            print("=============================fakeAVCeleb========================================")
             print(
                 "[AttackAgnosticDataset.__init__] loading FakeAVCelebDataset from:",
                 fakeavceleb_path,
