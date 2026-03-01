@@ -7,26 +7,26 @@ from dfadetect.agnostic_datasets.base_dataset import SimpleAudioFakeDataset
 
 FAKEAVCELEB_KFOLD_SPLIT = {
     0: {
-        "train": ["rtvc", "faceswap-wav2lip"],
-        "test": ["fsgan-wav2lip"],
-        "val": ["wav2lip"],
+        "train": ['rtvc', 'faceswap-wav2lip'],
+        "test": ['fsgan-wav2lip'],
+        "val": ['wav2lip'],
         "bonafide_partition": [0.7, 0.15],
-        "seed": 42,
+        "seed": 42
     },
     1: {
-        "train": ["fsgan-wav2lip", "wav2lip"],
-        "test": ["rtvc"],
-        "val": ["faceswap-wav2lip"],
+        "train": ['fsgan-wav2lip', 'wav2lip'],
+        "test": ['rtvc'],
+        "val": ['faceswap-wav2lip'],
         "bonafide_partition": [0.7, 0.15],
-        "seed": 43,
+        "seed": 43
     },
     2: {
-        "train": ["faceswap-wav2lip", "fsgan-wav2lip"],
-        "test": ["wav2lip"],
-        "val": ["rtvc"],
+        "train": ['faceswap-wav2lip', 'fsgan-wav2lip'],
+        "test": ['wav2lip'],
+        "val": ['rtvc'],
         "bonafide_partition": [0.7, 0.15],
-        "seed": 44,
-    },
+        "seed": 44
+    }
 }
 
 
@@ -48,16 +48,13 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
 
         self.metadata = self.get_metadata()
 
-        fake_df = self.get_fake_samples()
-        real_df = self.get_real_samples()
-
-        self.samples = pd.concat([fake_df, real_df], ignore_index=True)
+        self.samples = pd.concat([self.get_fake_samples(), self.get_real_samples()], ignore_index=True)
 
     def get_metadata(self):
-        md_path = Path(self.path) / self.metadata_file
-        md = pd.read_csv(md_path)
+        md = pd.read_csv(Path(self.path) / self.metadata_file)
         md["audio_type"] = md["type"].apply(lambda x: x.split("-")[-1])
         return md
+
 
     def get_fake_samples(self):
         samples = {
@@ -65,24 +62,22 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
             "sample_name": [],
             "attack_type": [],
             "label": [],
-            "path": [],
+            "path": []
         }
 
         for attack_name in self.allowed_attacks:
             fake_samples = self.metadata[
-                (self.metadata["method"] == attack_name)
-                & (self.metadata["audio_type"] == "FakeAudio")
+                (self.metadata["method"] == attack_name) & (self.metadata["audio_type"] == "FakeAudio")
             ]
 
-            for _, sample in fake_samples.iterrows():
+            for index, sample in fake_samples.iterrows():
                 samples["user_id"].append(sample["source"])
                 samples["sample_name"].append(Path(sample["path"]).stem)
                 samples["attack_type"].append(sample["method"])
                 samples["label"].append("spoof")
                 samples["path"].append(self.get_file_path(sample))
 
-        df = pd.DataFrame(samples)
-        return df
+        return pd.DataFrame(samples)
 
     def get_real_samples(self):
         samples = {
@@ -90,41 +85,41 @@ class FakeAVCelebDataset(SimpleAudioFakeDataset):
             "sample_name": [],
             "attack_type": [],
             "label": [],
-            "path": [],
+            "path": []
         }
 
         samples_list = self.metadata[
-            (self.metadata["method"] == "real")
-            & (self.metadata["audio_type"] == "RealAudio")
+            (self.metadata["method"] == "real") & (self.metadata["audio_type"] == "RealAudio")
         ]
 
         samples_list = self.split_real_samples(samples_list)
 
-        for _, sample in samples_list.iterrows():
+        for index, sample in samples_list.iterrows():
             samples["user_id"].append(sample["source"])
             samples["sample_name"].append(Path(sample["path"]).stem)
             samples["attack_type"].append("-")
             samples["label"].append("bonafide")
             samples["path"].append(self.get_file_path(sample))
 
-        df = pd.DataFrame(samples)
-        return df
+        return pd.DataFrame(samples)
+
 
     def get_file_path(self, sample):
-        """
-        sample['audio_path'] example:
-          'FakeAVCeleb/FakeVideo-FakeAudio/African/men/id00076/00109_10_id00476_wavtolip.flac'
-        We want:
-          '<base_audio_folder>/FakeVideo-FakeAudio/African/men/id00076/...flac'
-        """
-        rel = sample["audio_path"]
-
-        parts = rel.split("/")
-        if parts[0] == "FakeAVCeleb":
-            rel = "/".join(parts[1:])
-
-        full_path = Path(self.audio_folder) / rel
-        return full_path
+            """
+            sample['audio_path'] example:
+              'FakeAVCeleb/FakeVideo-FakeAudio/African/men/id00076/00109_10_id00476_wavtolip.flac'
+            We want:
+              '/kaggle/input/datasets/mrquadian/fakeavceleb/FakeVideo-FakeAudio/African/men/id00076/...flac'
+            """
+            rel = sample["audio_path"]
+    
+            # If audio_path starts with 'FakeAVCeleb/', drop that part
+            parts = rel.split("/")
+            if parts[0] == "FakeAVCeleb":
+                rel = "/".join(parts[1:])
+    
+            # Join with base folder
+            return Path(self.audio_folder) / rel
 
 
 if __name__ == "__main__":
